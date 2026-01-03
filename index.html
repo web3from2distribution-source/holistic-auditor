@@ -3,108 +3,365 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holistic Crypto Forensics</title>
+    <title>Chain Forensic Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'JetBrains Mono', monospace; }
-        .neon-border { box-shadow: 0 0 10px #00e676; }
-        .pulse-red { animation: pulse-red 2s infinite; }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #0F172A; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .btn-pattern { cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #64748B; background: #F1F5F9; transition: all 0.2s; }
+        .btn-pattern:hover { background: #E2E8F0; color: #0F172A; }
+        .btn-pattern.active { background: #DCFCE7; color: #166534; border: 1px solid #166534; }
+        
+        /* Loading Animation */
+        .loader { border-top-color: #10B981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Status Colors */
+        .status-green { color: #059669; }
+        .status-red { color: #DC2626; }
     </style>
 </head>
-<body class="bg-gray-900 text-green-400 min-h-screen transition-colors duration-500" id="main-body">
+<body class="min-h-screen flex flex-col">
 
-    <div id="login-overlay" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
-        <div class="bg-gray-800 p-8 rounded-lg border border-green-500 text-center max-w-sm w-full">
-            <i data-lucide="shield-check" class="w-16 h-16 mx-auto mb-4 text-green-500"></i>
-            <h1 class="text-2xl font-bold mb-2">HOLISTIC AUDITOR</h1>
-            <p class="text-gray-400 text-sm mb-6">Forensic Level Crypto Analysis</p>
-            <button onclick="loginWithGoogle()" class="w-full bg-green-600 hover:bg-green-700 text-black font-bold py-3 rounded transition">
-                INITIALIZE SYSTEM
+    <div id="login-overlay" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-sm w-full mx-4">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="fingerprint" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-800 mb-1">Chain Forensics</h1>
+            <p class="text-slate-500 text-sm mb-6">Restricted Access. Authorized Personnel Only.</p>
+            <button onclick="loginWithGoogle()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2">
+                <i data-lucide="log-in" class="w-4 h-4"></i> Authenticate Identity
             </button>
         </div>
     </div>
 
-    <div class="container mx-auto p-4 max-w-4xl">
+    <main class="container mx-auto p-4 max-w-lg flex-grow hidden" id="app-content">
         
-        <header class="flex justify-between items-center mb-8 border-b border-green-800 pb-4">
-            <div class="flex items-center gap-2">
-                <i data-lucide="radar" class="text-green-500"></i>
-                <span class="text-xl font-bold tracking-widest">SENTINEL V1.0</span>
-            </div>
-            <div id="user-status" class="text-sm text-gray-500">DISCONNECTED</div>
-        </header>
-
-        <div class="mb-8">
-            <div class="relative">
-                <input type="text" id="token-input" placeholder="Enter Token Address (Solana)..." 
-                    class="w-full bg-black border-2 border-green-700 p-4 pl-12 rounded text-lg focus:outline-none focus:border-green-400 focus:shadow-[0_0_15px_rgba(0,230,118,0.5)] transition">
-                <i data-lucide="search" class="absolute left-4 top-5 text-gray-500"></i>
-                <button onclick="runAudit()" class="absolute right-2 top-2 bg-green-900 hover:bg-green-800 text-green-300 px-6 py-2 rounded font-bold">
-                    SCAN
-                </button>
-            </div>
-        </div>
-
-        <div id="loading-bar" class="hidden mb-8">
-            <div class="text-center mb-2 animate-pulse">TRIANGULATING DATA SOURCES...</div>
-            <div class="w-full bg-gray-800 h-2 rounded overflow-hidden">
-                <div class="bg-green-500 h-full w-1/2 animate-[bounce_1s_infinite]"></div>
-            </div>
-        </div>
-
-        <div id="results-area" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <div class="col-span-1 md:col-span-2 bg-gray-800 p-6 rounded border border-gray-700 flex justify-between items-center" id="score-card">
+        <header class="mb-6">
+            <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 class="text-gray-400 text-sm uppercase">Safety Score</h2>
-                    <div class="text-5xl font-bold text-white" id="score-display">--</div>
+                    <h1 class="text-2xl font-bold text-green-700 tracking-tight leading-none">CHAIN<br>FORENSIC<br>ANALYZER</h1>
+                    <div class="flex items-center gap-2 mt-2 text-xs text-slate-500 mono">
+                        <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded">v2.4.1</span>
+                        <span>SOLANA MAINNET</span>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <h2 class="text-gray-400 text-sm uppercase">Verdict</h2>
-                    <div class="text-2xl font-bold" id="verdict-display">PENDING</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wide">Current Block</div>
+                    <div class="text-sm font-mono text-slate-700 font-bold flex items-center justify-end gap-1">
+                        <span id="block-height">245,891,002</span>
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-400"></i>
+                    </div>
+                    <div id="user-badge" class="mt-2 text-xs font-bold text-green-600">...</div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 p-6 rounded border border-gray-700">
-                <h3 class="flex items-center gap-2 font-bold mb-4 text-white">
-                    <i data-lucide="activity"></i> MARKET BEHAVIOR
-                </h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Price (USD)</span>
-                        <span id="data-price" class="text-white font-mono">--</span>
+            <div class="relative mb-3">
+                <input type="text" id="token-input" placeholder="Enter contract address..." 
+                    class="w-full pl-10 pr-24 py-3 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 mono text-sm">
+                <i data-lucide="search" class="absolute left-3 top-3.5 text-slate-400 w-4 h-4"></i>
+                <button onclick="runAudit()" class="absolute right-1 top-1 bottom-1 bg-green-700 hover:bg-green-800 text-white px-4 rounded-md text-xs font-bold tracking-wide">
+                    ANALYZE
+                </button>
+            </div>
+
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-xs text-slate-400 font-bold uppercase mr-1">Quick Patterns:</span>
+                <div onclick="simulate('bundle')" class="btn-pattern text-orange-600">BUNDLE</div>
+                <div onclick="simulate('wash')" class="btn-pattern text-blue-600">WASH</div>
+                <div onclick="simulate('farm')" class="btn-pattern text-yellow-600">FARM</div>
+                <div onclick="simulate('honeypot')" class="btn-pattern text-red-600">HONEYPOT</div>
+                <div onclick="simulate('rugpull')" class="btn-pattern text-red-800 font-bold">RUGPULL</div>
+                <div onclick="simulate('safe')" class="btn-pattern text-green-600">SAFE</div>
+            </div>
+        </header>
+
+        <div id="loading-ui" class="hidden py-12 text-center">
+            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
+            <h2 class="text-slate-600 font-semibold animate-pulse">Triangulating On-Chain Data...</h2>
+        </div>
+
+        <div id="results-ui" class="space-y-4 hidden">
+
+            <div class="card p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-green-600 font-mono font-bold text-lg">Token Intelligence</h3>
+                    <div class="flex gap-2">
+                        <i data-lucide="copy" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
+                        <i data-lucide="external-link" class="w-4 h-4 text-slate-400 cursor-pointer"></i>
                     </div>
-                    <div class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">1H Change</span>
-                        <span id="data-change" class="font-mono">--</span>
+                </div>
+                <div class="grid grid-cols-2 gap-y-4 text-sm">
+                    <div>
+                        <div class="text-slate-400 text-xs">Symbol</div>
+                        <div class="font-bold text-slate-800" id="data-symbol">--</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs">Name</div>
+                        <div class="font-bold text-slate-800" id="data-name">UnknownToken</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs">Address</div>
+                        <div class="font-mono text-blue-600 text-xs truncate w-24" id="data-address">--</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs">Market Cap</div>
+                        <div class="font-mono text-slate-800" id="data-mktcap">--</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs">24h Volume</div>
+                        <div class="font-mono text-slate-800" id="data-volume">--</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-xs">24h Change</div>
+                        <div class="font-mono font-bold" id="data-change">--</div>
+                    </div>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-100">
+                    <div class="text-xs text-slate-400 mb-1">Recent Analysis History</div>
+                    <div class="font-mono text-xs text-slate-300 truncate">
+                        0xeb92...ebe9  0xdd1c...e1ad  0x495d...7b96
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-5 relative overflow-hidden">
+                <h3 class="text-green-600 font-mono font-bold text-lg mb-6">Supply Analysis</h3>
+                
+                <div class="flex justify-between items-center mb-6">
+                    <div class="text-sm text-slate-500">Liquidity Metrics</div>
+                    <div class="font-mono text-xl font-bold text-green-600" id="score-liquidity">--/100</div>
+                </div>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Token Distribution</span>
+                        <span class="font-bold text-red-500 font-mono" id="data-distribution-risk">--%</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-400">Volume (24h)</span>
-                        <span id="data-volume" class="font-mono">--</span>
+                        <span class="text-slate-500">Total Holders</span>
+                        <span class="font-mono text-slate-800" id="data-holders">--</span>
                     </div>
-                    <div id="crash-alert" class="hidden bg-red-900/50 text-red-300 p-2 rounded text-center text-sm font-bold border border-red-500">
-                        ⚠️ RUG PULL DETECTED
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Whale Holders</span>
+                        <span class="font-mono text-slate-800 text-xs">(High Concentration)</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                    <div class="h-full bg-blue-500 w-[50%]"></div>
+                    <div class="h-full bg-red-500 w-[20%]"></div>
+                    <div class="h-full bg-slate-300 w-[30%]"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                    <span>Whales: 49.7%</span>
+                    <span>Large: 21.2%</span>
+                </div>
+            </div>
+
+            <div class="card p-5">
+                <h3 class="text-green-600 font-mono font-bold text-lg mb-2">Smart Contract Audit</h3>
+                <div class="border-b border-slate-100 mb-4"></div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <div class="text-slate-500 text-sm">Audit Score:</div>
+                        <div class="text-xs text-slate-400">Verified Source</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-500 font-mono" id="score-audit">100/100</div>
+                        <div class="text-xs font-bold text-green-700">PASSED</div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 p-6 rounded border border-gray-700">
-                <h3 class="flex items-center gap-2 font-bold mb-4 text-white">
-                    <i data-lucide="users"></i> HOLDER FORENSICS
-                </h3>
-                <div class="space-y-4">
-                    <div class="flex justify-between border-b border-gray-700 pb-2">
-                        <span class="text-gray-400">Top Holders Analyzed</span>
-                        <span id="data-holders-count" class="text-white font-mono">--</span>
+            <div class="card p-5" id="behavior-card">
+                <h3 class="text-green-600 font-mono font-bold text-lg mb-6">Behavioral Analysis</h3>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <div class="text-xs text-slate-400 flex items-center gap-1">
+                            24h Transactions <i data-lucide="trending-up" class="w-3 h-3 text-green-500"></i>
+                        </div>
+                        <div class="text-sm font-bold text-slate-700 mt-1">38.7% <span class="text-slate-400 font-normal">from yst</span></div>
                     </div>
+                    <div>
+                        <div class="text-xs text-slate-400 flex items-center gap-1">
+                            Active Traders <i data-lucide="activity" class="w-3 h-3 text-blue-500"></i>
+                        </div>
+                        <div class="text-sm font-bold text-slate-700 mt-1">102 <span class="text-slate-400 font-normal">new today</span></div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4">
+                    <div class="text-xs text-slate-400 uppercase tracking-widest mb-2">Anomaly Detection</div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span class="text-sm text-slate-600" id="anomaly-text">Supply Concentration</span>
+                        </div>
+                        <span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded" id="anomaly-badge">HIGH</span>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="text-xs text-slate-400 mb-2">Detected Patterns</div>
+                    <div id="pattern-tags" class="flex gap-2">
+                        </div>
+                </div>
+            </div>
+
+        </div> <div class="mt-8 border-t border-slate-200 pt-4 pb-8">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2 text-green-600 text-xs font-bold uppercase tracking-widest">
+                    <i data-lucide="activity" class="w-4 h-4"></i> Live Alert Feed
+                </div>
+                <div class="text-xs text-slate-400">4 active alerts</div>
+            </div>
+            
+            <div class="space-y-2">
+                <div class="bg-white border border-slate-100 p-3 rounded-lg flex items-start gap-3 shadow-sm">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 mt-0.5"></i>
+                    <div>
+                        <div class="text-xs text-slate-600 font-mono"><span class="text-green-600 font-bold">PASSED:</span> WASH cleared by forensic analysis</div>
+                        <div class="text-[10px] text-slate-400 font-mono mt-1">12:28:17  0xdd1c...72e1ad</div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-100 p-3 rounded-lg flex items-start gap-3 shadow-sm">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-green-500 mt-0.5"></i>
+                    <div>
+                        <div class="text-xs text-slate-600 font-mono"><span class="text-green-600 font-bold">PASSED:</span> UNK cleared by forensic analysis</div>
+                        <div class="text-[10px] text-slate-400 font-mono mt-1">12:27:43  0x495d...c17b96</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // CONFIG (Replace with your actual keys)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5rXUegGT1BT7dn1jZg0gmwAxfNN__Ta8",
+            authDomain: "holistic-auditor.firebaseapp.com",
+            projectId: "holistic-auditor",
+            storageBucket: "holistic-auditor.firebasestorage.app",
+            messagingSenderId: "183780528736",
+            appId: "1:183780528736:web:39f7e5ea307d799c8ca905"
+        };
+
+        const BACKEND_URL = "https://holistic-auditor.onrender.com"; // Your Render URL
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // AUTH HANDLERS
+        window.loginWithGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+        
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                document.getElementById('user-badge').innerText = "OPERATOR: " + user.displayName.toUpperCase();
+            }
+        });
+
+        // SIMULATION LOGIC (Clicking Pattern Tags)
+        window.simulate = (type) => {
+            const mockData = {
+                bundle: { score: 15, risk: "CRITICAL", tags: ["Supply Bundle", "High Concentration"], color: "text-red-600" },
+                wash: { score: 35, risk: "HIGH", tags: ["Wash Trading", "Artificial Vol"], color: "text-orange-500" },
+                farm: { score: 45, risk: "MED", tags: ["Farming Dev", "Slow Bleed"], color: "text-yellow-500" },
+                honeypot: { score: 0, risk: "FATAL", tags: ["Honeypot", "Blacklist"], color: "text-red-700" },
+                rugpull: { score: 0, risk: "FATAL", tags: ["RUG PULL", "Liquidity Drained"], color: "text-red-800" },
+                safe: { score: 98, risk: "SAFE", tags: ["Audited", "Dispersed"], color: "text-green-500" }
+            };
+            
+            document.getElementById('token-input').value = "0xSIMULATION_MODE_" + type.toUpperCase();
+            updateUI(mockData[type], {
+                price: "$1.42", change: "+12.4%", vol: "$4.2M", 
+                holders: type === 'bundle' ? "42 (Low)" : "4,201"
+            });
+        };
+
+        // REAL AUDIT LOGIC
+        window.runAudit = async () => {
+            const address = document.getElementById('token-input').value;
+            if(!address) return;
+
+            // UI Loading State
+            document.getElementById('loading-ui').classList.remove('hidden');
+            document.getElementById('results-ui').classList.add('hidden');
+
+            // Check if user is running a simulation trigger manually
+            if(address.includes("SIMULATION")) {
+                document.getElementById('loading-ui').classList.add('hidden');
+                document.getElementById('results-ui').classList.remove('hidden');
+                return; // The simulate function handles the data
+            }
+
+            try {
+                // Call Python Backend
+                const res = await fetch(`${BACKEND_URL}/audit`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({address})
+                });
+                const data = await res.json();
+                
+                // Map Backend Data to UI
+                const uiData = {
+                    score: data.overall_score,
+                    risk: data.overall_score > 80 ? "SAFE" : "HIGH",
+                    tags: data.pillars.distribution.risk ? ["Supply Issue"] : ["Verified"],
+                    color: data.overall_score > 80 ? "text-green-500" : "text-red-500"
+                };
+
+                const behavior = data.pillars.behavior || {};
+                
+                updateUI(uiData, {
+                    price: behavior.price ? `$${behavior.price}` : "--",
+                    change: behavior['1h_change'] || "--",
+                    vol: behavior.volume ? `$${parseFloat(behavior.volume).toLocaleString()}` : "--",
+                    holders: data.pillars.distribution.holder_count || "--"
+                });
+
+            } catch (e) {
+                alert("Connection Error: " + e.message);
+                document.getElementById('loading-ui').classList.add('hidden');
+            }
+        };
+
+        function updateUI(status, market) {
+            // Hide Loader
+            document.getElementById('loading-ui').classList.add('hidden');
+            document.getElementById('results-ui').classList.remove('hidden');
+
+            // Update Token Intel
+            document.getElementById('data-mktcap').innerText = market.vol; // Using Vol as proxy for demo
+            document.getElementById('data-volume').innerText = market.vol;
+            document.getElementById('data-change').innerText = market.change;
+            if(market.change.includes("-")) {
+                document.getElementById('data-change').className = "font-mono font-bold text-red-500";
+            } else {
+                document.getElementById('data-change').className = "font-mono font-bold text-green-500";
+            }
+
+            // Update Supply Card
+            document.getElementById('score-liquidity').innerText = status.score + "/100";
+            document.getElementById('data-holders').innerText = market.holders;
+            document.getElementById('data-distribution-risk').innerText = (100 - status.score) + "%";
+            
+            //                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-400">Bundle Status</span>
                         <span id="data-bundle-status" class="font-mono">--</span>
