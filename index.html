@@ -1,0 +1,16 @@
+// Inside your index.html script tag
+const BACKEND_URL = "https://your-python-app-on-render.com"; // We will get this URL in Phase 3
+
+async function runAudit() {
+    const address = document.getElementById('search-input').value;
+    
+    // Call the Merged Python Engine
+    const response = await fetch(`${BACKEND_URL}/audit`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ address: address })
+    });
+    
+    const data = await response.json();
+    // Update your UI with 'data'
+}
