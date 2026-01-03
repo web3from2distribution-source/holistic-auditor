@@ -1,16 +1,246 @@
-// Inside your index.html script tag
-const BACKEND_URL = "https://holistic-auditor.onrender.com"; // We will get this URL in Phase 3
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holistic Crypto Forensics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-async function runAudit() {
-    const address = document.getElementById('search-input').value;
-    
-    // Call the Merged Python Engine
-    const response = await fetch(`${BACKEND_URL}/audit`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ address: address })
-    });
-    
-    const data = await response.json();
-    // Update your UI with 'data'
-}
+    <style>
+        body { font-family: 'JetBrains Mono', monospace; }
+        .neon-border { box-shadow: 0 0 10px #00e676; }
+        .pulse-red { animation: pulse-red 2s infinite; }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-green-400 min-h-screen transition-colors duration-500" id="main-body">
+
+    <div id="login-overlay" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg border border-green-500 text-center max-w-sm w-full">
+            <i data-lucide="shield-check" class="w-16 h-16 mx-auto mb-4 text-green-500"></i>
+            <h1 class="text-2xl font-bold mb-2">HOLISTIC AUDITOR</h1>
+            <p class="text-gray-400 text-sm mb-6">Forensic Level Crypto Analysis</p>
+            <button onclick="loginWithGoogle()" class="w-full bg-green-600 hover:bg-green-700 text-black font-bold py-3 rounded transition">
+                INITIALIZE SYSTEM
+            </button>
+        </div>
+    </div>
+
+    <div class="container mx-auto p-4 max-w-4xl">
+        
+        <header class="flex justify-between items-center mb-8 border-b border-green-800 pb-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="radar" class="text-green-500"></i>
+                <span class="text-xl font-bold tracking-widest">SENTINEL V1.0</span>
+            </div>
+            <div id="user-status" class="text-sm text-gray-500">DISCONNECTED</div>
+        </header>
+
+        <div class="mb-8">
+            <div class="relative">
+                <input type="text" id="token-input" placeholder="Enter Token Address (Solana)..." 
+                    class="w-full bg-black border-2 border-green-700 p-4 pl-12 rounded text-lg focus:outline-none focus:border-green-400 focus:shadow-[0_0_15px_rgba(0,230,118,0.5)] transition">
+                <i data-lucide="search" class="absolute left-4 top-5 text-gray-500"></i>
+                <button onclick="runAudit()" class="absolute right-2 top-2 bg-green-900 hover:bg-green-800 text-green-300 px-6 py-2 rounded font-bold">
+                    SCAN
+                </button>
+            </div>
+        </div>
+
+        <div id="loading-bar" class="hidden mb-8">
+            <div class="text-center mb-2 animate-pulse">TRIANGULATING DATA SOURCES...</div>
+            <div class="w-full bg-gray-800 h-2 rounded overflow-hidden">
+                <div class="bg-green-500 h-full w-1/2 animate-[bounce_1s_infinite]"></div>
+            </div>
+        </div>
+
+        <div id="results-area" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="col-span-1 md:col-span-2 bg-gray-800 p-6 rounded border border-gray-700 flex justify-between items-center" id="score-card">
+                <div>
+                    <h2 class="text-gray-400 text-sm uppercase">Safety Score</h2>
+                    <div class="text-5xl font-bold text-white" id="score-display">--</div>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-gray-400 text-sm uppercase">Verdict</h2>
+                    <div class="text-2xl font-bold" id="verdict-display">PENDING</div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded border border-gray-700">
+                <h3 class="flex items-center gap-2 font-bold mb-4 text-white">
+                    <i data-lucide="activity"></i> MARKET BEHAVIOR
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Price (USD)</span>
+                        <span id="data-price" class="text-white font-mono">--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">1H Change</span>
+                        <span id="data-change" class="font-mono">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Volume (24h)</span>
+                        <span id="data-volume" class="font-mono">--</span>
+                    </div>
+                    <div id="crash-alert" class="hidden bg-red-900/50 text-red-300 p-2 rounded text-center text-sm font-bold border border-red-500">
+                        ⚠️ RUG PULL DETECTED
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded border border-gray-700">
+                <h3 class="flex items-center gap-2 font-bold mb-4 text-white">
+                    <i data-lucide="users"></i> HOLDER FORENSICS
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-gray-700 pb-2">
+                        <span class="text-gray-400">Top Holders Analyzed</span>
+                        <span id="data-holders-count" class="text-white font-mono">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Bundle Status</span>
+                        <span id="data-bundle-status" class="font-mono">--</span>
+                    </div>
+                    <div id="visual-cluster" class="h-24 flex items-center justify-center opacity-50">
+                        <span class="text-xs text-gray-500">[ NODE GRAPH VISUALIZATION ]</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. IMPORT FIREBASE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } 
+            from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // 2. CONFIGURATION (Your Credentials)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5rXUegGT1BT7dn1jZg0gmwAxfNN__Ta8",
+            authDomain: "holistic-auditor.firebaseapp.com",
+            projectId: "holistic-auditor",
+            storageBucket: "holistic-auditor.firebasestorage.app",
+            messagingSenderId: "183780528736",
+            appId: "1:183780528736:web:39f7e5ea307d799c8ca905"
+        };
+
+        // --- BACKEND CONNECTION ---
+        // This is the link to your Render server
+        const BACKEND_URL = "https://holistic-auditor.onrender.com"; 
+
+        // Initialize App
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // 3. LOGIN LOGIC
+        window.loginWithGoogle = () => {
+            signInWithPopup(auth, provider).catch((error) => {
+                alert("Login Failed: " + error.message);
+            });
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('user-status').innerText = "OPERATOR: " + user.displayName.toUpperCase();
+                document.getElementById('user-status').classList.add('text-green-500');
+            }
+        });
+
+        // 4. THE AUDIT LOGIC
+        window.runAudit = async () => {
+            const address = document.getElementById('token-input').value;
+            if (!address) return alert("Please enter a token address");
+
+            // UI Updates
+            document.getElementById('loading-bar').classList.remove('hidden');
+            document.getElementById('results-area').classList.add('hidden');
+            document.getElementById('crash-alert').classList.add('hidden');
+            resetTheme();
+
+            try {
+                // Call Backend
+                const response = await fetch(`${BACKEND_URL}/audit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address })
+                });
+                
+                const data = await response.json();
+
+                // --- UPDATE UI WITH REAL DATA ---
+                
+                // Score
+                document.getElementById('score-display').innerText = data.overall_score;
+                updateVerdict(data.overall_score);
+
+                // Market Data (Pillar 3)
+                const behavior = data.pillars.behavior || {};
+                document.getElementById('data-price').innerText = behavior.price ? `$${behavior.price}` : "N/A";
+                document.getElementById('data-change').innerText = behavior['1h_change'] || "0%";
+                document.getElementById('data-volume').innerText = behavior.volume ? `$${parseFloat(behavior.volume).toLocaleString()}` : "N/A";
+
+                // CRASH DETECTION (The Red Alert)
+                if (behavior.status && behavior.status.includes("CRASH")) {
+                    triggerRedAlert();
+                }
+
+                // Distribution Data (Pillar 2)
+                const dist = data.pillars.distribution || {};
+                document.getElementById('data-holders-count').innerText = dist.holder_count || "0";
+                document.getElementById('data-bundle-status').innerText = dist.risk ? dist.risk : "Dispersed (Safe)";
+                if (dist.risk) document.getElementById('data-bundle-status').classList.add('text-red-400');
+
+                // Reveal Results
+                document.getElementById('loading-bar').classList.add('hidden');
+                document.getElementById('results-area').classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                alert("Audit Failed: Check if Render server is awake (it might take 30s to start).");
+                document.getElementById('loading-bar').classList.add('hidden');
+            }
+        };
+
+        // Helper: Turn screen Red on Crash
+        function triggerRedAlert() {
+            const body = document.getElementById('main-body');
+            body.classList.remove('bg-gray-900', 'text-green-400');
+            body.classList.add('bg-red-950', 'text-red-200');
+            document.getElementById('crash-alert').classList.remove('hidden');
+            document.getElementById('score-card').classList.add('pulse-red', 'border-red-500');
+        }
+
+        // Helper: Reset Theme
+        function resetTheme() {
+            const body = document.getElementById('main-body');
+            body.classList.add('bg-gray-900', 'text-green-400');
+            body.classList.remove('bg-red-950', 'text-red-200');
+            document.getElementById('score-card').classList.remove('pulse-red', 'border-red-500');
+        }
+
+        // Helper: Verdict Text
+        function updateVerdict(score) {
+            const el = document.getElementById('verdict-display');
+            if (score >= 80) { el.innerText = "LOW RISK"; el.className = "text-2xl font-bold text-green-500"; }
+            else if (score >= 50) { el.innerText = "CAUTION"; el.className = "text-2xl font-bold text-yellow-500"; }
+            else { el.innerText = "CRITICAL"; el.className = "text-2xl font-bold text-red-500"; }
+        }
+
+        // Load Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+
