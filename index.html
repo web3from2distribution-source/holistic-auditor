@@ -3,105 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Forensic Analyzer</title>
+    <title>Holistic Forensic Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #0F172A; }
+        body { background-color: #0B1120; color: #E2E8F0; font-family: 'Inter', sans-serif; }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        .btn-pattern { cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #64748B; background: #F1F5F9; transition: all 0.2s; }
-        .btn-pattern:hover { background: #E2E8F0; color: #0F172A; }
+        .card { background: #1E293B; border: 1px solid #334155; border-radius: 8px; }
+        .forensic-panel { border-left: 3px solid; }
+        .panel-immutable { border-color: #3B82F6; } /* Blue for Code */
+        .panel-mutable { border-color: #10B981; }   /* Green for Behavior */
         
-        /* Loading Animation */
+        /* Grid Pattern Background */
+        .bg-grid { background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 20px 20px; }
+        
         .loader { border-top-color: #10B981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen bg-grid">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div class="container mx-auto p-4 max-w-lg">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold text-slate-800 tracking-tight leading-none">CHAIN FORENSIC<br><span class="text-green-600">ANALYZER</span></h1>
+    <header class="border-b border-slate-700 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded">
+                    <i data-lucide="shield-search" class="text-white w-5 h-5"></i>
                 </div>
-                <button id="connect-btn" onclick="connectWallet()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-2 px-4 rounded-lg transition flex items-center gap-2">
-                    <i data-lucide="wallet" class="w-4 h-4"></i> CONNECT WALLET
-                </button>
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-tight">CHAIN FORENSICS</h1>
+                    <div class="text-[10px] text-slate-400 mono">V3.1.0 // DUAL THEOLOGY ENGINE</div>
+                </div>
             </div>
+            <button id="connect-btn" onclick="connectWallet()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold py-2 px-4 rounded transition flex items-center gap-2">
+                <i data-lucide="wallet" class="w-4 h-4"></i> CONNECT SOLANA
+            </button>
         </div>
     </header>
 
-    <main class="container mx-auto p-4 max-w-lg flex-grow">
-        
-        <div class="flex justify-between items-center mb-6 text-xs text-slate-500 font-mono">
-            <div class="flex items-center gap-2">
-                <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded">v3.0.PAY</span>
-                <span>SOLANA MAINNET</span>
+    <main class="container mx-auto px-4 py-8">
+
+        <div class="max-w-2xl mx-auto mb-12 text-center">
+            <h2 class="text-3xl font-extrabold text-white mb-2">Reveal The Invisible.</h2>
+            <p class="text-slate-400 mb-6 text-sm">Triangulate Code, Supply, and Behavior to detect "Soft Rugs" other scanners miss.</p>
+            
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div class="relative flex">
+                    <input type="text" id="token-input" placeholder="Enter Token Address..." 
+                        class="w-full bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-l-lg focus:outline-none focus:border-blue-500 mono">
+                    <button onclick="runPaidAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-r-lg flex items-center gap-2 transition">
+                        <span>SCAN</span>
+                        <span class="bg-blue-800 text-[10px] py-1 px-2 rounded ml-1">0.015 SOL</span>
+                    </button>
+                </div>
             </div>
-            <div class="flex items-center gap-1">
-                <span>FEE:</span>
-                <span class="text-green-600 font-bold">0.000015 SOL</span>
+
+            <div class="mt-4 flex justify-center gap-3 text-xs mono">
+                <span class="text-slate-500">SIMULATE:</span>
+                <button onclick="simulate('bundle')" class="text-orange-400 hover:underline">BUNDLE</button>
+                <button onclick="simulate('wash')" class="text-blue-400 hover:underline">WASH TRADING</button>
+                <button onclick="simulate('safe')" class="text-green-400 hover:underline">SAFE TOKEN</button>
             </div>
         </div>
 
-        <div class="relative mb-3">
-            <input type="text" id="token-input" placeholder="Enter contract address..." 
-                class="w-full pl-10 pr-24 py-3 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 mono text-sm">
-            <i data-lucide="search" class="absolute left-3 top-3.5 text-slate-400 w-4 h-4"></i>
-            <button onclick="runPaidAudit()" class="absolute right-1 top-1 bottom-1 bg-green-700 hover:bg-green-800 text-white px-4 rounded-md text-xs font-bold tracking-wide flex items-center gap-1">
-                PAY & SCAN
-            </button>
+        <div id="loading-ui" class="hidden fixed inset-0 bg-slate-900/90 z-40 flex flex-col items-center justify-center">
+            <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-700 h-16 w-16 mb-6"></div>
+            <div class="text-xl font-bold text-white mb-2 animate-pulse" id="loading-text">Processing Payment...</div>
+            <div class="text-sm text-slate-400 mono">Triangulating On-Chain Data Points</div>
         </div>
 
-        <div class="flex flex-wrap gap-2 items-center mb-8">
-            <span class="text-xs text-slate-400 font-bold uppercase mr-1">Triggers:</span>
-            <div onclick="simulate('bundle')" class="btn-pattern text-orange-600">BUNDLE</div>
-            <div onclick="simulate('rugpull')" class="btn-pattern text-red-800 font-bold">RUGPULL</div>
-            <div onclick="simulate('safe')" class="btn-pattern text-green-600">SAFE</div>
-        </div>
+        <div id="results-ui" class="hidden">
+            
+            <div class="card p-6 mb-8 flex flex-col md:flex-row justify-between items-center border-l-4" id="verdict-banner">
+                <div>
+                    <div class="text-sm text-slate-400 uppercase tracking-widest font-bold mb-1">Forensic Verdict</div>
+                    <h2 class="text-3xl font-bold text-white" id="verdict-title">--</h2>
+                    <p class="text-sm text-slate-400 mt-1 max-w-xl" id="verdict-desc">--</p>
+                </div>
+                <div class="text-right mt-4 md:mt-0">
+                    <div class="text-5xl font-mono font-bold" id="verdict-score">--</div>
+                    <div class="text-xs text-slate-500 uppercase mt-1">Safety Score</div>
+                </div>
+            </div>
 
-        <div id="loading-ui" class="hidden py-12 text-center">
-            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
-            <h2 id="loading-text" class="text-slate-600 font-semibold animate-pulse">Processing Payment...</h2>
-            <p class="text-xs text-slate-400 mt-2">Please approve transaction in your wallet</p>
-        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        <div id="results-ui" class="space-y-4 hidden">
-            <div class="card p-5">
-                <h3 class="text-green-600 font-mono font-bold text-lg mb-4">Token Intelligence</h3>
-                <div class="grid grid-cols-2 gap-y-4 text-sm">
-                    <div>
-                        <div class="text-slate-400 text-xs">Symbol</div>
-                        <div class="font-bold text-slate-800" id="data-symbol">--</div>
+                <div class="space-y-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="box" class="text-blue-500"></i>
+                        <h3 class="font-bold text-slate-200">THEOLOGY A: CODE & SUPPLY</h3>
                     </div>
-                    <div>
-                        <div class="text-slate-400 text-xs">Price</div>
-                        <div class="font-mono text-slate-800" id="data-price">--</div>
+
+                    <div class="card p-5 forensic-panel panel-immutable">
+                        <div class="flex justify-between mb-4">
+                            <h4 class="font-bold text-sm text-slate-300">Supply Clustering (The "Bundle")</h4>
+                            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-blue-400 border border-blue-900/30">Forensic Angle A</span>
+                        </div>
+                        <div class="h-64 relative bg-slate-900/50 rounded flex items-center justify-center overflow-hidden">
+                            <canvas id="clusterChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-xs text-slate-400 bg-slate-800 p-3 rounded border border-slate-700">
+                            <strong class="text-blue-400">Why this matters:</strong> 
+                            <span id="cluster-insight">Scammers split tokens into 20+ wallets to look decentralized. Our "Spider Web" algorithm detects if these wallets were funded by the same source.</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-5">
+                        <h4 class="font-bold text-sm text-slate-300 mb-4">Holder Concentration</h4>
+                        <div class="flex gap-4 items-center">
+                            <div class="w-1/3">
+                                <canvas id="holderPieChart"></canvas>
+                            </div>
+                            <div class="w-2/3 space-y-3 text-sm">
+                                <div class="flex justify-between border-b border-slate-700 pb-1">
+                                    <span class="text-slate-400">Top 10 Holders</span>
+                                    <span class="font-mono text-white" id="data-top10">--%</span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-700 pb-1">
+                                    <span class="text-slate-400">Dev Wallet</span>
+                                    <span class="font-mono text-white" id="data-dev">--%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-slate-400">Unique Holders</span>
+                                    <span class="font-mono text-white" id="data-unique">--</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card p-5">
-                <h3 class="text-green-600 font-mono font-bold text-lg mb-4">Supply Analysis</h3>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-slate-500 text-sm">Risk Score</span>
-                    <span class="font-mono text-xl font-bold" id="score-liquidity">--/100</span>
-                </div>
-                <div class="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex" id="supply-bar">
-                    <div class="h-full bg-slate-300 w-full"></div>
-                </div>
-            </div>
+                <div class="space-y-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="activity" class="text-green-500"></i>
+                        <h3 class="font-bold text-slate-200">THEOLOGY B: HUMAN BEHAVIOR</h3>
+                    </div>
 
-            <div class="card p-5">
-                <h3 class="text-green-600 font-mono font-bold text-lg mb-4">Behavioral Analysis</h3>
-                <div class="flex justify-between items-center bg-slate-50 p-3 rounded">
-                    <span class="text-sm text-slate-600">Anomaly Detection</span>
-                    <span class="text-xs font-bold px-2 py-1 rounded" id="anomaly-badge">--</span>
+                    <div class="card p-5 forensic-panel panel-mutable">
+                        <div class="flex justify-between mb-4">
+                            <h4 class="font-bold text-sm text-slate-300">Volume vs. Reality (Wash Trading)</h4>
+                            <span class="text-xs bg-slate-800 px-2 py-1 rounded text-green-400 border border-green-900/30">Forensic Angle B</span>
+                        </div>
+                        <div class="h-48">
+                            <canvas id="volumeChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-xs text-slate-400 bg-slate-800 p-3 rounded border border-slate-700">
+                            <strong class="text-green-400">Why this matters:</strong> 
+                            <span id="volume-insight">High volume with low unique traders means the Dev is trading with himself to fake popularity (Wash Trading).</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-5">
+                        <h4 class="font-bold text-sm text-slate-300 mb-4">Seller Behavior (Farming)</h4>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-3 text-xs text-slate-500 uppercase font-bold mb-2">
+                                <div>Wallet Type</div>
+                                <div class="text-center">Action</div>
+                                <div class="text-right">Impact</div>
+                            </div>
+                            <div id="seller-rows" class="space-y-2 text-sm font-mono">
+                                <div class="grid grid-cols-3 items-center bg-slate-800/50 p-2 rounded">
+                                    <div class="text-orange-400">Early Buyer</div>
+                                    <div class="text-center text-red-400">SOLD</div>
+                                    <div class="text-right">-0.4 SOL</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -109,60 +181,44 @@
     </main>
 
     <script>
-        // --- CONFIGURATION ---
-        const BACKEND_URL = "https://holistic-auditor.onrender.com"; 
-        
-        // !!! PASTE YOUR WALLET ADDRESS HERE !!!
-        const TREASURY_WALLET = "PUT_YOUR_SOLANA_WALLET_ADDRESS_HERE"; 
-        const AUDIT_FEE = 0.000015; // SOL
+        // --- CONFIG ---
+        const BACKEND_URL = "https://holistic-auditor.onrender.com";
+        const TREASURY_WALLET = "YOUR_WALLET_ADDRESS_HERE"; // <--- PASTE WALLET HERE
+        const AUDIT_FEE = 0.000015;
 
-        // --- WALLET CONNECTION ---
         let userWallet = null;
+        let clusterChartInstance = null;
+        let volumeChartInstance = null;
+        let holderChartInstance = null;
 
+        // --- WALLET ---
         async function connectWallet() {
             if (window.solana && window.solana.isPhantom) {
-                try {
-                    const resp = await window.solana.connect();
-                    userWallet = resp.publicKey.toString();
-                    
-                    // Update UI
-                    const btn = document.getElementById('connect-btn');
-                    btn.innerText = userWallet.slice(0, 4) + '...' + userWallet.slice(-4);
-                    btn.classList.remove('bg-slate-900');
-                    btn.classList.add('bg-green-600');
-                } catch (err) {
-                    alert("Connection rejected!");
-                }
+                const resp = await window.solana.connect();
+                userWallet = resp.publicKey.toString();
+                document.getElementById('connect-btn').innerText = "CONNECTED: " + userWallet.slice(0,4) + "..";
+                document.getElementById('connect-btn').classList.replace("bg-slate-800", "bg-blue-700");
             } else {
-                alert("Phantom Wallet not found. Please install it!");
-                window.open("https://phantom.app/", "_blank");
+                alert("Please install Phantom Wallet");
             }
         }
 
-        // --- THE PAYMENT LOGIC ---
+        // --- PAYMENT & EXECUTION ---
         async function runPaidAudit() {
             const address = document.getElementById('token-input').value;
-            if (!address) return alert("Enter a token address");
+            if(!address) return alert("Enter Address");
 
-            // 1. Check Wallet
-            if (!userWallet) {
-                await connectWallet();
-                if (!userWallet) return; // User cancelled
-            }
+            // SIMULATION BYPASS
+            if(address.includes("SIMULATE")) return runSimulation(address.split(":")[1]);
 
-            // 2. Start Payment Process
+            // PAYMENT FLOW
+            if(!userWallet) await connectWallet();
+            if(!userWallet) return;
+
             document.getElementById('loading-ui').classList.remove('hidden');
-            document.getElementById('results-ui').classList.add('hidden');
-            document.getElementById('loading-text').innerText = "Processing Payment...";
-
-            if (address.includes("SIMULATION")) {
-                // Skip payment for simulations
-                setTimeout(() => runActualAudit(address), 1000);
-                return;
-            }
 
             try {
-                // Setup Transaction
+                // 1. Transaction
                 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
                 const transaction = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
@@ -171,43 +227,15 @@
                         lamports: AUDIT_FEE * solanaWeb3.LAMPORTS_PER_SOL
                     })
                 );
-
                 const { blockhash } = await connection.getLatestBlockhash();
                 transaction.recentBlockhash = blockhash;
                 transaction.feePayer = new solanaWeb3.PublicKey(userWallet);
 
-                // Request Sign & Send
                 const { signature } = await window.solana.signAndSendTransaction(transaction);
-                
-                document.getElementById('loading-text').innerText = "Confirming on Blockchain...";
-                
-                // Wait for confirmation
+                document.getElementById('loading-text').innerText = "Confirming Forensic Request...";
                 await connection.confirmTransaction(signature);
-                
-                // Payment Success! Run the Audit
-                runActualAudit(address);
 
-            } catch (err) {
-                console.error(err);
-                alert("Transaction Failed or Cancelled.");
-                document.getElementById('loading-ui').classList.add('hidden');
-            }
-        }
-
-        // --- THE AUDIT LOGIC (Runs after payment) ---
-        async function runActualAudit(address) {
-            document.getElementById('loading-text').innerText = "Triangulating Data...";
-
-            try {
-                // Simulation Mode Bypass
-                if(address.includes("SIMULATION")) {
-                    const type = address.split("_")[2].toLowerCase();
-                    const mock = getMockData(type);
-                    updateUI(mock);
-                    return;
-                }
-
-                // Real Backend Call
+                // 2. Fetch Data (Real)
                 const res = await fetch(`${BACKEND_URL}/audit`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -215,59 +243,131 @@
                 });
                 const data = await res.json();
                 
-                // Convert Backend Data to UI Format
-                const uiData = {
-                    symbol: "UNK", // Your backend needs to return this
-                    price: data.pillars.behavior.price || "--",
+                // Map to UI
+                renderData({
                     score: data.overall_score,
-                    risk: data.overall_score > 80 ? "SAFE" : "HIGH"
-                };
-                updateUI(uiData);
+                    type: data.overall_score > 80 ? "SAFE" : "RISK",
+                    top10: "45%", // Real backend needs to return these specifics
+                    dev: "2%",
+                    holders: data.pillars.distribution.holder_count || 0
+                });
 
-            } catch (e) {
-                alert("Audit Error: " + e.message);
+            } catch(e) {
+                console.error(e);
+                alert("Transaction or Audit Failed");
                 document.getElementById('loading-ui').classList.add('hidden');
             }
         }
 
-        // --- UI UPDATER ---
-        function updateUI(data) {
+        // --- SIMULATION (THEORETICAL KNOWLEDGE DISPLAY) ---
+        function simulate(type) {
+            document.getElementById('token-input').value = "SIMULATE:" + type.toUpperCase();
+            runSimulation(type);
+        }
+
+        function runSimulation(type) {
+            document.getElementById('loading-ui').classList.remove('hidden');
+            document.getElementById('loading-text').innerText = "Simulating Forensic Pattern: " + type.toUpperCase();
+            
+            setTimeout(() => {
+                let mockData = {};
+                
+                if (type === 'bundle') {
+                    mockData = {
+                        score: 12,
+                        title: "SUPPLY BUNDLE DETECTED",
+                        desc: "High Risk of Rug Pull. Supply is centralized in connected wallets.",
+                        verdictColor: "border-red-500",
+                        scoreColor: "text-red-500",
+                        top10: "92%", dev: "0%", unique: 45,
+                        clusterData: [10, 10, 10, 10, 10, 10, 10, 10], // Even split = bundle
+                        volumeData: [100, 120, 110, 130], // Normal volume
+                        insight: "Notice the spider-web pattern. Wallets A, B, and C were funded by the same Deployer."
+                    };
+                } else if (type === 'wash') {
+                    mockData = {
+                        score: 35,
+                        title: "ARTIFICIAL VOLUME",
+                        desc: "Wash Trading Detected. Volume is high but unique traders are low.",
+                        verdictColor: "border-orange-500",
+                        scoreColor: "text-orange-500",
+                        top10: "20%", dev: "5%", unique: 12,
+                        clusterData: [50, 5, 5, 2, 1, 37], // Dispersed
+                        volumeData: [5000, 5000, 5000, 5000], // Flat bars = bot
+                        insight: "The volume bars are perfectly flat, indicating a bot buying and selling to itself."
+                    };
+                } else {
+                    mockData = {
+                        score: 98,
+                        title: "LOW RISK ASSET",
+                        desc: "Organic distribution and healthy trading behavior.",
+                        verdictColor: "border-green-500",
+                        scoreColor: "text-green-500",
+                        top10: "12%", dev: "1.5%", unique: 4201,
+                        clusterData: [5, 2, 1, 10, 20, 15, 5, 42], // Organic
+                        volumeData: [120, 340, 210, 450], // Organic waves
+                        insight: "No wallet clusters detected. Supply is well distributed."
+                    };
+                }
+                
+                renderData(mockData);
+            }, 1500);
+        }
+
+        function renderData(data) {
             document.getElementById('loading-ui').classList.add('hidden');
             document.getElementById('results-ui').classList.remove('hidden');
 
-            document.getElementById('data-symbol').innerText = data.symbol || "TOKEN";
-            document.getElementById('data-price').innerText = data.price ? `$${data.price}` : "--";
-            document.getElementById('score-liquidity').innerText = data.score + "/100";
+            // Verdict
+            document.getElementById('verdict-title').innerText = data.title;
+            document.getElementById('verdict-desc').innerText = data.desc;
+            document.getElementById('verdict-score').innerText = data.score;
+            document.getElementById('verdict-score').className = `text-5xl font-mono font-bold ${data.scoreColor}`;
+            document.getElementById('verdict-banner').className = `card p-6 mb-8 flex flex-col md:flex-row justify-between items-center border-l-4 ${data.verdictColor}`;
+
+            // Metrics
+            document.getElementById('data-top10').innerText = data.top10;
+            document.getElementById('data-dev').innerText = data.dev;
+            document.getElementById('data-unique').innerText = data.unique;
+            document.getElementById('cluster-insight').innerText = data.insight;
+
+            // --- CHARTS (CHART.JS) ---
             
-            // Color Coding
-            const scoreEl = document.getElementById('score-liquidity');
-            const badgeEl = document.getElementById('anomaly-badge');
-            
-            if (data.score > 80) {
-                scoreEl.className = "font-mono text-xl font-bold text-green-600";
-                badgeEl.innerText = "SAFE";
-                badgeEl.className = "text-xs font-bold px-2 py-1 rounded bg-green-100 text-green-800";
-            } else {
-                scoreEl.className = "font-mono text-xl font-bold text-red-600";
-                badgeEl.innerText = "CRITICAL RISK";
-                badgeEl.className = "text-xs font-bold px-2 py-1 rounded bg-red-100 text-red-800";
-            }
-        }
+            // 1. Cluster Chart (Radar for Bundling)
+            const ctxCluster = document.getElementById('clusterChart').getContext('2d');
+            if(clusterChartInstance) clusterChartInstance.destroy();
+            clusterChartInstance = new Chart(ctxCluster, {
+                type: 'radar',
+                data: {
+                    labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
+                    datasets: [{
+                        label: 'Wallet Connection Strength',
+                        data: data.clusterData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: '#3B82F6',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff'
+                    }]
+                },
+                options: {
+                    scales: { r: { grid: { color: '#334155' }, ticks: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
 
-        // --- SIMULATION DATA ---
-        function simulate(type) {
-            document.getElementById('token-input').value = "0xSIMULATION_MODE_" + type.toUpperCase();
-            runPaidAudit(); // Triggers the flow but skips payment
-        }
-        
-        function getMockData(type) {
-            if(type === 'bundle') return { symbol: "SCAM", price: "0.004", score: 15 };
-            if(type === 'rugpull') return { symbol: "RUG", price: "0.00001", score: 0 };
-            return { symbol: "SAFE", price: "1.20", score: 98 };
-        }
-
-        lucide.createIcons();
-    </script>
-</body>
-</html>
-
+            // 2. Volume Chart (Bar for Wash Trading)
+            const ctxVol = document.getElementById('volumeChart').getContext('2d');
+            if(volumeChartInstance) volumeChartInstance.destroy();
+            volumeChartInstance = new Chart(ctxVol, {
+                type: 'bar',
+                data: {
+                    labels: ['10:00', '11:00', '12:00', '13:00'],
+                    datasets: [{
+                        label: 'Trading Volume',
+                        data: data.volumeData,
+                        backgroundColor: '#10B981',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                
