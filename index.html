@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,7 +35,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-none tracking-tight">CHAIN FORENSICS</h1>
-                    <div class="text-[10px] text-slate-400 mono">V3.2.0 // LIVE PRODUCTION</div>
+                    <div class="text-[10px] text-slate-400 mono">V3.2.0 // SECURE PROD</div>
                 </div>
             </div>
             <button id="connect-btn" onclick="connectWallet()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold py-2 px-4 rounded transition flex items-center gap-2">
@@ -57,14 +56,16 @@
                     <input type="text" id="token-input" placeholder="Enter Token Address (Solana)..." 
                         class="w-full bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-l-lg focus:outline-none focus:border-blue-500 mono">
                     <button onclick="runPaidAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-r-lg flex items-center gap-2 transition">
-                        <span>SCAN</span>
+
+
+                             <span>SCAN</span>
                         <span class="bg-blue-800 text-[10px] py-1 px-2 rounded ml-1">0.002 SOL</span>
                     </button>
                 </div>
             </div>
             
             <div class="mt-4 text-xs text-slate-500 mono">
-                * Payment required for live API forensic data access.
+                * Secure Payment: 0.002 SOL required for forensic data API access.
             </div>
         </div>
 
@@ -178,13 +179,17 @@
 
     </main>
 
-    <script>
+
+       <script>
         // --- CONFIGURATION ---
+        // Your Render Backend URL
         const BACKEND_URL = "https://holistic-auditor.onrender.com"; 
         
         // !!! PASTE YOUR WALLET ADDRESS HERE !!!
-        const TREASURY_WALLET = "3jnA1WpyyuVc8RqRR8GH2x8m7DWDP3t1KQ1untsW5CKi"; 
-        const AUDIT_FEE = 0.002; // ~ $0.25 USD
+        const TREASURY_WALLET = "YOUR_SOLANA_WALLET_ADDRESS_HERE"; 
+        
+        // The Fee in SOL
+        const AUDIT_FEE = 0.002; 
 
         // --- GLOBAL VARS ---
         let userWallet = null;
@@ -210,7 +215,7 @@
         // --- PAYMENT & EXECUTION ---
         async function runPaidAudit() {
             const address = document.getElementById('token-input').value;
-            if(!address) return alert("Enter Address");
+            if(!address) return alert("Enter Token Address");
 
             // 1. CHECK WALLET
             if(!userWallet) await connectWallet();
@@ -236,11 +241,13 @@
 
                 // 3. SEND & CONFIRM
                 const { signature } = await window.solana.signAndSendTransaction(transaction);
-                document.getElementById('loading-text').innerText = "Confirming on Blockchain...";
-                await connection.confirmTransaction(signature);
+                document.getElementById('loading-text').innerText = "Verifying Payment on Chain...";
+                
+                // We confirm on client side first to ensure block propagation
+                await connection.confirmTransaction(signature, 'confirmed');
 
-                // 4. RUN REAL AUDIT
-                await runRealBackendAudit(address);
+                // 4. RUN REAL SECURE AUDIT
+                await runRealBackendAudit(address, signature);
 
             } catch(e) {
                 console.error(e);
@@ -249,21 +256,32 @@
             }
         }
 
-        // --- THE REAL BACKEND CALL ---
-        async function runRealBackendAudit(address) {
-            document.getElementById('loading-text').innerText = "Triangulating Live Data...";
+
+                // --- THE REAL BACKEND CALL (WITH SIGNATURE) ---
+        async function runRealBackendAudit(address, signature) {
+            document.getElementById('loading-text').innerText = "Triangulating Live Forensic Data...";
             
             try {
+                // We send the signature so the backend can verify payment
                 const res = await fetch(`${BACKEND_URL}/audit`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({address})
+                    body: JSON.stringify({
+                        address: address,
+                        signature: signature 
+                    })
                 });
                 
-                if(!res.ok) throw new Error("Server Error");
                 const data = await res.json();
+                
+                // If payment verification failed (402 Error)
+                if (res.status === 402) {
+                    throw new Error("Payment Verification Failed: " + data.error);
+                }
+                
+                if(!res.ok) throw new Error("Server Error");
 
-                // Extract Data Pillars
+                // --- DATA MAPPING ---
                 const supply = data.pillars.supply || {};
                 const market = data.pillars.market || {};
                 const code = data.pillars.code || {};
@@ -291,13 +309,14 @@
                     change: (market.change || 0) + "%",
 
                     // Charts (Visuals based on Score)
+                    // Note: In v4 we can pass raw arrays from Python, here we infer pattern from score
                     clusterData: data.overall_score < 50 ? [10,10,10,10,10,10] : [5,2,20,1,15,4], 
                     volumeData: data.overall_score < 50 ? [100,100,100,100] : [50, 120, 80, 150],
                     insight: allRisks.length > 0 ? allRisks[0] : "Supply and volume appear organic."
                 });
 
             } catch (e) {
-                alert("Audit Error: " + e.message + ". If Render is sleeping, try again in 30s.");
+                alert("Audit Error: " + e.message + ". (If Render is sleeping, wait 30s and try again)");
                 document.getElementById('loading-ui').classList.add('hidden');
             }
         }
@@ -327,7 +346,8 @@
             updateCharts(data);
         }
 
-        function updateCharts(data) {
+
+           function updateCharts(data) {
             // Cluster Chart
             const ctxCluster = document.getElementById('clusterChart').getContext('2d');
             if(clusterChartInstance) clusterChartInstance.destroy();
@@ -340,7 +360,8 @@
                         data: data.clusterData,
                         backgroundColor: 'rgba(59, 130, 246, 0.2)',
                         borderColor: '#3B82F6',
-                        borderWidth: 2
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff'
                     }]
                 },
                 options: { scales: { r: { grid: { color: '#334155' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
@@ -362,7 +383,7 @@
                 options: { scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
             });
 
-                  // Pie Chart
+            // Pie Chart
             const ctxPie = document.getElementById('holderPieChart').getContext('2d');
             if(holderChartInstance) holderChartInstance.destroy();
             const top10Val = parseInt(data.top10) || 0;
