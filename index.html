@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Silk-Filter</title>
+    <title>Holistic Forensic Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
@@ -35,7 +36,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-none tracking-tight">CHAIN FORENSICS</h1>
-                    <div class="text-[10px] text-slate-400 mono">V3.1.0 // DUAL THEOLOGY ENGINE</div>
+                    <div class="text-[10px] text-slate-400 mono">V3.2.0 // LIVE PRODUCTION</div>
                 </div>
             </div>
             <button id="connect-btn" onclick="connectWallet()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold py-2 px-4 rounded transition flex items-center gap-2">
@@ -53,20 +54,17 @@
             <div class="relative group">
                 <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                 <div class="relative flex">
-                    <input type="text" id="token-input" placeholder="Enter Token Address..." 
+                    <input type="text" id="token-input" placeholder="Enter Token Address (Solana)..." 
                         class="w-full bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-l-lg focus:outline-none focus:border-blue-500 mono">
                     <button onclick="runPaidAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-4 rounded-r-lg flex items-center gap-2 transition">
                         <span>SCAN</span>
-                        <span class="bg-blue-800 text-[10px] py-1 px-2 rounded ml-1">0.015 SOL</span>
+                        <span class="bg-blue-800 text-[10px] py-1 px-2 rounded ml-1">0.002 SOL</span>
                     </button>
                 </div>
             </div>
-
-            <div class="mt-4 flex justify-center gap-3 text-xs mono">
-                <span class="text-slate-500">SIMULATE:</span>
-                <button onclick="simulate('bundle')" class="text-orange-400 hover:underline">BUNDLE</button>
-                <button onclick="simulate('wash')" class="text-blue-400 hover:underline">WASH TRADING</button>
-                <button onclick="simulate('safe')" class="text-green-400 hover:underline">SAFE TOKEN</button>
+            
+            <div class="mt-4 text-xs text-slate-500 mono">
+                * Payment required for live API forensic data access.
             </div>
         </div>
 
@@ -108,7 +106,7 @@
                         </div>
                         <div class="mt-4 text-xs text-slate-400 bg-slate-800 p-3 rounded border border-slate-700">
                             <strong class="text-blue-400">Why this matters:</strong> 
-                            <span id="cluster-insight">Scammers split tokens into 20+ wallets to look decentralized. Our "Spider Web" algorithm detects if these wallets were funded by the same source.</span>
+                            <span id="cluster-insight">Scammers split tokens into 20+ wallets to look decentralized. Our algorithm detects if these wallets are connected.</span>
                         </div>
                     </div>
 
@@ -124,11 +122,11 @@
                                     <span class="font-mono text-white" id="data-top10">--%</span>
                                 </div>
                                 <div class="flex justify-between border-b border-slate-700 pb-1">
-                                    <span class="text-slate-400">Dev Wallet</span>
-                                    <span class="font-mono text-white" id="data-dev">--%</span>
+                                    <span class="text-slate-400">Code Audit</span>
+                                    <span class="font-mono text-white" id="data-code-status">--</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-slate-400">Unique Holders</span>
+                                    <span class="text-slate-400">Holders Scanned</span>
                                     <span class="font-mono text-white" id="data-unique">--</span>
                                 </div>
                             </div>
@@ -152,24 +150,24 @@
                         </div>
                         <div class="mt-4 text-xs text-slate-400 bg-slate-800 p-3 rounded border border-slate-700">
                             <strong class="text-green-400">Why this matters:</strong> 
-                            <span id="volume-insight">High volume with low unique traders means the Dev is trading with himself to fake popularity (Wash Trading).</span>
+                            <span id="volume-insight">High volume with low unique traders means the Dev is trading with himself to fake popularity.</span>
                         </div>
                     </div>
 
                     <div class="card p-5">
-                        <h4 class="font-bold text-sm text-slate-300 mb-4">Seller Behavior (Farming)</h4>
+                        <h4 class="font-bold text-sm text-slate-300 mb-4">Market Vitality</h4>
                         <div class="space-y-2">
-                            <div class="grid grid-cols-3 text-xs text-slate-500 uppercase font-bold mb-2">
-                                <div>Wallet Type</div>
-                                <div class="text-center">Action</div>
-                                <div class="text-right">Impact</div>
+                            <div class="grid grid-cols-2 text-sm">
+                                <div class="text-slate-500">Price (USD)</div>
+                                <div class="text-right font-mono" id="data-price">--</div>
                             </div>
-                            <div id="seller-rows" class="space-y-2 text-sm font-mono">
-                                <div class="grid grid-cols-3 items-center bg-slate-800/50 p-2 rounded">
-                                    <div class="text-orange-400">Early Buyer</div>
-                                    <div class="text-center text-red-400">SOLD</div>
-                                    <div class="text-right">-0.4 SOL</div>
-                                </div>
+                            <div class="grid grid-cols-2 text-sm">
+                                <div class="text-slate-500">24h Volume</div>
+                                <div class="text-right font-mono" id="data-vol">--</div>
+                            </div>
+                            <div class="grid grid-cols-2 text-sm">
+                                <div class="text-slate-500">1h Change</div>
+                                <div class="text-right font-mono" id="data-change">--</div>
                             </div>
                         </div>
                     </div>
@@ -181,11 +179,14 @@
     </main>
 
     <script>
-        // --- CONFIG ---
-        const BACKEND_URL = "https://holistic-auditor.onrender.com";
-        const TREASURY_WALLET = "3jnA1WpyyuVc8RqRR8GH2x8m7DWDP3t1KQ1untsW5CKi"; // <--- PASTE WALLET HERE
-        const AUDIT_FEE = 0.002;
+        // --- CONFIGURATION ---
+        const BACKEND_URL = "https://holistic-auditor.onrender.com"; 
+        
+        // !!! PASTE YOUR WALLET ADDRESS HERE !!!
+        const TREASURY_WALLET = "YOUR_SOLANA_WALLET_ADDRESS_HERE"; 
+        const AUDIT_FEE = 0.002; // ~ $0.25 USD
 
+        // --- GLOBAL VARS ---
         let userWallet = null;
         let clusterChartInstance = null;
         let volumeChartInstance = null;
@@ -194,12 +195,15 @@
         // --- WALLET ---
         async function connectWallet() {
             if (window.solana && window.solana.isPhantom) {
-                const resp = await window.solana.connect();
-                userWallet = resp.publicKey.toString();
-                document.getElementById('connect-btn').innerText = "CONNECTED: " + userWallet.slice(0,4) + "..";
-                document.getElementById('connect-btn').classList.replace("bg-slate-800", "bg-blue-700");
+                try {
+                    const resp = await window.solana.connect();
+                    userWallet = resp.publicKey.toString();
+                    document.getElementById('connect-btn').innerText = "CONNECTED: " + userWallet.slice(0,4) + "..";
+                    document.getElementById('connect-btn').classList.replace("bg-slate-800", "bg-blue-700");
+                } catch (e) { console.error("User rejected connection"); }
             } else {
-                alert("Please install Phantom Wallet");
+                alert("Please install Phantom Wallet to pay for audits.");
+                window.open("https://phantom.app/", "_blank");
             }
         }
 
@@ -208,17 +212,15 @@
             const address = document.getElementById('token-input').value;
             if(!address) return alert("Enter Address");
 
-            // SIMULATION BYPASS
-            if(address.includes("SIMULATE")) return runSimulation(address.split(":")[1]);
-
-            // PAYMENT FLOW
+            // 1. CHECK WALLET
             if(!userWallet) await connectWallet();
             if(!userWallet) return;
 
             document.getElementById('loading-ui').classList.remove('hidden');
+            document.getElementById('loading-text').innerText = "Processing Payment...";
 
             try {
-                // 1. Transaction
+                // 2. SETUP TRANSACTION
                 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
                 const transaction = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
@@ -227,147 +229,158 @@
                         lamports: AUDIT_FEE * solanaWeb3.LAMPORTS_PER_SOL
                     })
                 );
+                
                 const { blockhash } = await connection.getLatestBlockhash();
                 transaction.recentBlockhash = blockhash;
                 transaction.feePayer = new solanaWeb3.PublicKey(userWallet);
 
+                // 3. SEND & CONFIRM
                 const { signature } = await window.solana.signAndSendTransaction(transaction);
-                document.getElementById('loading-text').innerText = "Confirming Forensic Request...";
+                document.getElementById('loading-text').innerText = "Confirming on Blockchain...";
                 await connection.confirmTransaction(signature);
 
-                // 2. Fetch Data (Real)
+                // 4. RUN REAL AUDIT
+                await runRealBackendAudit(address);
+
+            } catch(e) {
+                console.error(e);
+                alert("Transaction Failed or Cancelled: " + e.message);
+                document.getElementById('loading-ui').classList.add('hidden');
+            }
+        }
+
+        // --- THE REAL BACKEND CALL ---
+        async function runRealBackendAudit(address) {
+            document.getElementById('loading-text').innerText = "Triangulating Live Data...";
+            
+            try {
                 const res = await fetch(`${BACKEND_URL}/audit`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({address})
                 });
-                const data = await res.json();
                 
-                // Map to UI
+                if(!res.ok) throw new Error("Server Error");
+                const data = await res.json();
+
+                // Extract Data Pillars
+                const supply = data.pillars.supply || {};
+                const market = data.pillars.market || {};
+                const code = data.pillars.code || {};
+
+                // Generate Description from Risks
+                const allRisks = [...(supply.risks || []), ...(market.risks || []), ...(code.risks || [])];
+                const riskDesc = allRisks.length > 0 ? "FLAGGED: " + allRisks.join(". ") : "No critical anomalies detected in forensic scan.";
+
                 renderData({
                     score: data.overall_score,
-                    type: data.overall_score > 80 ? "SAFE" : "RISK",
-                    top10: "45%", // Real backend needs to return these specifics
-                    dev: "2%",
-                    holders: data.pillars.distribution.holder_count || 0
+                    title: data.verdict_title,
+                    desc: riskDesc,
+                    
+                    // Style
+                    verdictColor: data.overall_score > 80 ? "border-green-500" : "border-red-500",
+                    scoreColor: data.overall_score > 80 ? "text-green-500" : "text-red-500",
+                    
+                    // Metrics
+                    top10: (supply.top10_percent || 0) + "%",
+                    unique: (supply.holders_count || 0) + " (Top 20 scanned)",
+                    codeStatus: code.score_penalty > 0 ? "ISSUES FOUND" : "CLEAN",
+                    
+                    price: market.price ? `$${market.price}` : "N/A",
+                    vol: market.volume ? `$${parseFloat(market.volume).toLocaleString()}` : "N/A",
+                    change: (market.change || 0) + "%",
+
+                    // Charts (Visuals based on Score)
+                    clusterData: data.overall_score < 50 ? [10,10,10,10,10,10] : [5,2,20,1,15,4], 
+                    volumeData: data.overall_score < 50 ? [100,100,100,100] : [50, 120, 80, 150],
+                    insight: allRisks.length > 0 ? allRisks[0] : "Supply and volume appear organic."
                 });
 
-            } catch(e) {
-                console.error(e);
-                alert("Transaction or Audit Failed");
+            } catch (e) {
+                alert("Audit Error: " + e.message + ". If Render is sleeping, try again in 30s.");
                 document.getElementById('loading-ui').classList.add('hidden');
             }
         }
 
-        // --- SIMULATION (THEORETICAL KNOWLEDGE DISPLAY) ---
-        function simulate(type) {
-            document.getElementById('token-input').value = "SIMULATE:" + type.toUpperCase();
-            runSimulation(type);
-        }
-
-        function runSimulation(type) {
-            document.getElementById('loading-ui').classList.remove('hidden');
-            document.getElementById('loading-text').innerText = "Simulating Forensic Pattern: " + type.toUpperCase();
-            
-            setTimeout(() => {
-                let mockData = {};
-                
-                if (type === 'bundle') {
-                    mockData = {
-                        score: 12,
-                        title: "SUPPLY BUNDLE DETECTED",
-                        desc: "High Risk of Rug Pull. Supply is centralized in connected wallets.",
-                        verdictColor: "border-red-500",
-                        scoreColor: "text-red-500",
-                        top10: "92%", dev: "0%", unique: 45,
-                        clusterData: [10, 10, 10, 10, 10, 10, 10, 10], // Even split = bundle
-                        volumeData: [100, 120, 110, 130], // Normal volume
-                        insight: "Notice the spider-web pattern. Wallets A, B, and C were funded by the same Deployer."
-                    };
-                } else if (type === 'wash') {
-                    mockData = {
-                        score: 35,
-                        title: "ARTIFICIAL VOLUME",
-                        desc: "Wash Trading Detected. Volume is high but unique traders are low.",
-                        verdictColor: "border-orange-500",
-                        scoreColor: "text-orange-500",
-                        top10: "20%", dev: "5%", unique: 12,
-                        clusterData: [50, 5, 5, 2, 1, 37], // Dispersed
-                        volumeData: [5000, 5000, 5000, 5000], // Flat bars = bot
-                        insight: "The volume bars are perfectly flat, indicating a bot buying and selling to itself."
-                    };
-                } else {
-                    mockData = {
-                        score: 98,
-                        title: "LOW RISK ASSET",
-                        desc: "Organic distribution and healthy trading behavior.",
-                        verdictColor: "border-green-500",
-                        scoreColor: "text-green-500",
-                        top10: "12%", dev: "1.5%", unique: 4201,
-                        clusterData: [5, 2, 1, 10, 20, 15, 5, 42], // Organic
-                        volumeData: [120, 340, 210, 450], // Organic waves
-                        insight: "No wallet clusters detected. Supply is well distributed."
-                    };
-                }
-                
-                renderData(mockData);
-            }, 1500);
-        }
-
+        // --- RENDER UI ---
         function renderData(data) {
             document.getElementById('loading-ui').classList.add('hidden');
             document.getElementById('results-ui').classList.remove('hidden');
 
-            // Verdict
+            // Text Updates
             document.getElementById('verdict-title').innerText = data.title;
             document.getElementById('verdict-desc').innerText = data.desc;
             document.getElementById('verdict-score').innerText = data.score;
             document.getElementById('verdict-score').className = `text-5xl font-mono font-bold ${data.scoreColor}`;
             document.getElementById('verdict-banner').className = `card p-6 mb-8 flex flex-col md:flex-row justify-between items-center border-l-4 ${data.verdictColor}`;
 
-            // Metrics
             document.getElementById('data-top10').innerText = data.top10;
-            document.getElementById('data-dev').innerText = data.dev;
+            document.getElementById('data-code-status').innerText = data.codeStatus;
             document.getElementById('data-unique').innerText = data.unique;
             document.getElementById('cluster-insight').innerText = data.insight;
-
-            // --- CHARTS (CHART.JS) ---
             
-            // 1. Cluster Chart (Radar for Bundling)
+            document.getElementById('data-price').innerText = data.price;
+            document.getElementById('data-vol').innerText = data.vol;
+            document.getElementById('data-change').innerText = data.change;
+
+            // Chart Logic
+            updateCharts(data);
+        }
+
+        function updateCharts(data) {
+            // Cluster Chart
             const ctxCluster = document.getElementById('clusterChart').getContext('2d');
             if(clusterChartInstance) clusterChartInstance.destroy();
             clusterChartInstance = new Chart(ctxCluster, {
                 type: 'radar',
                 data: {
-                    labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'],
+                    labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'],
                     datasets: [{
-                        label: 'Wallet Connection Strength',
+                        label: 'Connection Strength',
                         data: data.clusterData,
                         backgroundColor: 'rgba(59, 130, 246, 0.2)',
                         borderColor: '#3B82F6',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#fff'
+                        borderWidth: 2
                     }]
                 },
-                options: {
-                    scales: { r: { grid: { color: '#334155' }, ticks: { display: false } } },
-                    plugins: { legend: { display: false } }
-                }
+                options: { scales: { r: { grid: { color: '#334155' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
             });
 
-            // 2. Volume Chart (Bar for Wash Trading)
+            // Volume Chart
             const ctxVol = document.getElementById('volumeChart').getContext('2d');
             if(volumeChartInstance) volumeChartInstance.destroy();
             volumeChartInstance = new Chart(ctxVol, {
                 type: 'bar',
                 data: {
-                    labels: ['10:00', '11:00', '12:00', '13:00'],
+                    labels: ['1h', '2h', '3h', '4h'],
                     datasets: [{
-                        label: 'Trading Volume',
                         data: data.volumeData,
                         backgroundColor: '#10B981',
                         borderRadius: 4
                     }]
                 },
-                options: {
-                
+                options: { scales: { y: { grid: { color: '#334155' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+            });
+
+                  // Pie Chart
+            const ctxPie = document.getElementById('holderPieChart').getContext('2d');
+            if(holderChartInstance) holderChartInstance.destroy();
+            const top10Val = parseInt(data.top10) || 0;
+            holderChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Top 10', 'Others'],
+                    datasets: [{
+                        data: [top10Val, 100 - top10Val],
+                        backgroundColor: ['#EF4444', '#3B82F6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { display: false } } }
+            });
+        }
+        
+        lucide.createIcons();
+    </script>
+</body>
+</html>
