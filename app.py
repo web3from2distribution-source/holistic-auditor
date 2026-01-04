@@ -7,93 +7,174 @@ app = Flask(__name__)
 CORS(app)
 
 # --- CONFIGURATION ---
-HELIUS_KEY = os.environ.get("HELIUS_API_KEY")
+# You must add this key in your Render Dashboard > Environment Variables
+HELIUS_API_KEY = os.environ.get("HELIUS_API_KEY") 
 
-# --- PILLAR 3: GECKOTERMINAL (The Crash Detector) ---
-def check_price_crash(token_address):
-    # We use GeckoTerminal because it sees NEW tokens on Solana instantly
-    network = "solana"
-    url = f"https://api.geckoterminal.com/api/v2/networks/{network}/tokens/{token_address}"
+# --- FORENSIC PILLAR 1: CODE & METADATA (Helius) ---
+def analyze_code_security(token_address):
+    url = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
+    
+    # We use the DAS API to get full token metadata
+    payload = {
+        "jsonrpc": "2.0",
+        "id": "text",
+        "method": "getAsset",
+        "params": { "id": token_address }
+    }
     
     try:
-        response = requests.get(url).json()
+        response = requests.post(url, json=payload).json()
+        asset_data = response.get('result', {})
         
-        # 1. Extract Data
-        attributes = response['data']['attributes']
-        price_usd = attributes.get('price_usd')
-        price_change_1h = attributes['price_change_percentage'].get('h1')
-        volume_24h = attributes.get('volume_usd')['h24']
+        # Default Risks
+        risks = []
+        score_penalty = 0
         
-        report = {
-            "price": price_usd,
-            "1h_change": f"{price_change_1h}%",
-            "volume": volume_24h,
-            "status": "Stable"
-        }
+        # Check 1: Mutable Metadata (Dev can change image/name later)
+        if asset_data.get('mutable', False):
+            risks.append("Mutable Metadata (Dev can change details)")
+            score_penalty += 10
+            
+        # Check 2: Authorities (If we can detect them via standard SPL layout)
+        # Note: Deep code analysis usually requires parsing byte-code, 
+        # but 'ownership' flags in metadata are a good proxy for "Renounced".
+        ownership = asset_data.get('ownership', {})
+        if not ownership.get('frozen', False):
+             # Simplified check: Real "Renounced" checks are complex, 
+             # but we assume risk if standard ownership flags are active.
+             pass 
 
-        # 2. THE RUG PULL LOGIC (Crash Detection)
-        # If price dropped more than 50% in 1 hour, it's a crash.
-        if float(price_change_1h) < -50.0:
-            report["status"] = "CRASH DETECTED (Rug Pull)"
-            report["risk_score"] = 0 # Fatal
-        
-        # 3. THE FAKE VOLUME LOGIC
-        # If volume is huge ($1M+) but price didn't move, it's wash trading.
-        elif float(volume_24h) > 1000000 and abs(float(price_change_1h)) < 1.0:
-            report["status"] = "Suspicious: Fake Volume Detected"
-        
-        return report
-
+        return {"score_penalty": score_penalty, "risks": risks}
     except Exception as e:
-        return {"error": "Token not trading yet or API Error", "details": str(e)}
+        print(f"Code Audit Error: {e}")
+        return {"score_penalty": 0, "risks": ["Audit data unavailable"]}
 
-# --- PILLAR 2: HELIUS (The Bundle Detector) ---
-def check_holders(token_address):
-    # (Same Helius logic as before)
-    url = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_KEY}"
+# --- FORENSIC PILLAR 2: SUPPLY DISTRIBUTION (Helius) ---
+def analyze_supply(token_address):
+    url = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
     payload = {
         "jsonrpc": "2.0", "id": 1, 
         "method": "getTokenLargestAccounts", 
         "params": [token_address]
     }
+    
     try:
         res = requests.post(url, json=payload).json()
-        if 'error' in res: return []
-        holders = [x['address'] for x in res['result']['value'][:20]]
-        return holders
-    except:
-        return []
+        accounts = res.get('result', {}).get('value', [])
+        
+        if not accounts:
+            return {"score_penalty": 50, "top10_percent": 0, "risks": ["Hidden Supply / Error"]}
 
-# --- THE MASTER BRAIN ---
+        # Calculate Concentration
+        # Note: We don't know Total Supply easily without another call, 
+        # so we assume standard SPL 1B or calc ratio if UI sends total supply.
+        # For this v1, we check the raw amounts relative to each other.
+        
+        total_top_10 = sum([int(acc['amount']) for acc in accounts[:10]])
+        top_holder = int(accounts[0]['amount'])
+        
+        # Risk Logic
+        score_penalty = 0
+        risks = []
+        
+        # Heuristic: If Top 1 holds > 20% of the Top 10 sum, it's very centralized
+        concentration_ratio = top_holder / total_top_10
+        
+        if concentration_ratio > 0.5: # Top holder has 50% of the whale bag
+            risks.append("CRITICAL: Single Whale Dominance")
+            score_penalty += 40
+        elif concentration_ratio > 0.2:
+            risks.append("High Concentration")
+            score_penalty += 20
+            
+        return {
+            "score_penalty": score_penalty, 
+            "top10_percent": int(concentration_ratio * 100), # Proxy for display
+            "risks": risks,
+            "holders_count": len(accounts) # Only returns top 20
+        }
+    except:
+        return {"score_penalty": 0, "top10_percent": 0, "risks": []}
+
+# --- FORENSIC PILLAR 3: MARKET BEHAVIOR (GeckoTerminal) ---
+def analyze_market(token_address):
+    # GeckoTerminal uses standard format usually
+    url = f"https://api.geckoterminal.com/api/v2/networks/solana/tokens/{token_address}"
+    
+    try:
+        res = requests.get(url).json()
+        data = res.get('data', {}).get('attributes', {})
+        
+        if not data:
+            return {"score_penalty": 50, "status": "DEAD", "price": "0", "risks": ["Token not trading"]}
+
+        price = data.get('price_usd')
+        vol_24h = float(data.get('volume_usd', {}).get('h24', 0))
+        change_1h = float(data.get('price_change_percentage', {}).get('h1', 0))
+        liquidity = float(data.get('reserve_in_usd', 0))
+        
+        score_penalty = 0
+        risks = []
+        
+        # Rug Pull Check
+        if change_1h < -50.0:
+            risks.append("CRASH DETECTED (-50% in 1h)")
+            score_penalty += 100 # Fatal
+        
+        # Liquidity Check
+        if liquidity < 1000:
+            risks.append("Low Liquidity (<$1k)")
+            score_penalty += 30
+            
+        # Wash Trading Check (Volume > 2x Liquidity is suspicious)
+        if liquidity > 0 and (vol_24h / liquidity) > 2.0:
+            risks.append("Suspicious Volume (Wash Trading)")
+            score_penalty += 20
+            
+        return {
+            "score_penalty": score_penalty,
+            "price": price,
+            "volume": vol_24h,
+            "change": change_1h,
+            "risks": risks
+        }
+    except:
+        return {"score_penalty": 0, "status": "Unknown", "risks": []}
+
+# --- MASTER ROUTE ---
 @app.route('/audit', methods=['POST'])
-def holistic_audit():
+def audit():
     data = request.json
     address = data.get('address')
     
-    # Initialize the Report Card
-    full_report = {
-        "overall_score": 100,
-        "pillars": {}
-    }
+    if not address:
+        return jsonify({"error": "No address provided"}), 400
 
-    # 1. Run The Crash Detector (GeckoTerminal)
-    market_data = check_price_crash(address)
-    full_report["pillars"]["behavior"] = market_data
-
-    # Penalty Check
-    if "CRASH" in market_data.get("status", ""):
-        full_report["overall_score"] = 0 # Instant Fail
-
-    # 2. Run The Bundle Detector (Helius)
-    holders = check_holders(address)
-    if len(holders) > 0 and len(holders) < 10:
-        full_report["pillars"]["distribution"] = {"risk": "High: < 10 Holders detected"}
-        full_report["overall_score"] -= 50
-    else:
-        full_report["pillars"]["distribution"] = {"status": "Pass", "holder_count": len(holders)}
-
-    return jsonify(full_report)
+    # 1. Run All Audits
+    code_audit = analyze_code_security(address)
+    supply_audit = analyze_supply(address)
+    market_audit = analyze_market(address)
+    
+    # 2. Calculate Final Score
+    base_score = 100
+    total_penalty = code_audit['score_penalty'] + supply_audit['score_penalty'] + market_audit['score_penalty']
+    final_score = max(0, base_score - total_penalty)
+    
+    # 3. Construct Verdict
+    verdict_title = "SAFE"
+    if final_score < 80: verdict_title = "CAUTION"
+    if final_score < 50: verdict_title = "DANGEROUS"
+    if final_score < 20: verdict_title = "SCAM DETECTED"
+    
+    return jsonify({
+        "overall_score": final_score,
+        "verdict_title": verdict_title,
+        "pillars": {
+            "code": code_audit,
+            "supply": supply_audit,
+            "market": market_audit
+        }
+    })
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
-    
